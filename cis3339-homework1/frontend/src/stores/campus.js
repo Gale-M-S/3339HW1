@@ -1,62 +1,109 @@
 import { defineStore } from 'pinia';
 
-let nextId = 1;
+async function request(path, options = {}) {
+  const response = await fetch(`/api${path}`, {
+    ...options,
+    headers: { 'Content-Type': 'application/json', ...options.headers },
+  });
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(body.error || 'The request could not be completed.');
+  return body;
+}
 
 export const useCampusStore = defineStore('campus', {
   state: () => ({
     students: [],
     courses: [],
     enrollments: [],
+    pendingRequests: 0,
     error: '',
     notice: '',
   }),
+  getters: {
+    loading: (state) => state.pendingRequests > 0,
+  },
   actions: {
     clearFeedback() {
       this.error = '';
       this.notice = '';
     },
-    addStudent(student) {
+    async run(action) {
       this.clearFeedback();
-      if (this.students.some((item) => item.id.toLowerCase() === student.id.toLowerCase())) {
-        this.error = 'A student with that ID already exists.';
+      this.pendingRequests += 1;
+      try {
+        return await action();
+      } catch (error) {
+        this.error = error.message;
         return false;
+      } finally {
+        this.pendingRequests -= 1;
       }
-      this.students.push({ ...student, _id: `student-${nextId++}` });
-      this.notice = 'Student added.';
-      return true;
     },
-    removeStudent(id) {
-      const student = this.students.find((item) => item._id === id);
-      this.students = this.students.filter((item) => item._id !== id);
-      this.enrollments = this.enrollments.filter((item) => item.studentId !== id);
-      this.notice = student ? `${student.name} was removed.` : '';
+    async loadStudents(name = '') {
+      return this.run(async () => {
+        const query = name ? `?name=${encodeURIComponent(name)}` : '';
+        this.students = await request(`/students${query}`);
+      });
     },
-    addCourse(course) {
-      this.clearFeedback();
-      if (this.courses.some((item) => item.courseId.toLowerCase() === course.courseId.toLowerCase())) {
-        this.error = 'A course with that ID already exists.';
-        return false;
-      }
-      this.courses.push({ ...course, _id: `course-${nextId++}` });
-      this.notice = 'Course added.';
-      return true;
+    async addStudent(student) {
+      return this.run(async () => {
+        await request('/students', { method: 'POST', body: JSON.stringify(student) });
+        this.students = await request('/students');
+        this.notice = 'Student added.';
+        return true;
+      });
     },
-    removeCourse(id) {
-      const course = this.courses.find((item) => item._id === id);
-      this.courses = this.courses.filter((item) => item._id !== id);
-      this.enrollments = this.enrollments.filter((item) => item.courseId !== id);
-      this.notice = course ? `${course.courseId} was removed.` : '';
+    async removeStudent(id) {
+      return this.run(async () => {
+        await request(`/students/${id}`, { method: 'DELETE' });
+        [this.students, this.enrollments] = await Promise.all([
+          request('/students'),
+          request('/enrollments'),
+        ]);
+        this.notice = 'Student and related enrollments removed.';
+        return true;
+      });
     },
-    addEnrollment(studentId, courseId) {
-      this.clearFeedback();
-      const duplicate = this.enrollments.some((item) => item.studentId === studentId && item.courseId === courseId);
-      if (duplicate) {
-        this.error = 'This student is already enrolled in that course.';
-        return false;
-      }
-      this.enrollments.push({ _id: `enrollment-${nextId++}`, studentId, courseId });
-      this.notice = 'Enrollment created.';
-      return true;
+    async loadCourses() {
+      return this.run(async () => {
+        this.courses = await request('/courses');
+      });
+    },
+    async addCourse(course) {
+      return this.run(async () => {
+        await request('/courses', { method: 'POST', body: JSON.stringify(course) });
+        this.courses = await request('/courses');
+        this.notice = 'Course added.';
+        return true;
+      });
+    },
+    async removeCourse(id) {
+      return this.run(async () => {
+        await request(`/courses/${id}`, { method: 'DELETE' });
+        [this.courses, this.enrollments] = await Promise.all([
+          request('/courses'),
+          request('/enrollments'),
+        ]);
+        this.notice = 'Course and related enrollments removed.';
+        return true;
+      });
+    },
+    async loadEnrollments(course = '') {
+      return this.run(async () => {
+        const query = course ? `?course=${encodeURIComponent(course)}` : '';
+        this.enrollments = await request(`/enrollments${query}`);
+      });
+    },
+    async addEnrollment({ studentId, courseId }) {
+      return this.run(async () => {
+        await request('/enrollments', {
+          method: 'POST',
+          body: JSON.stringify({ studentId, courseId }),
+        });
+        this.enrollments = await request('/enrollments');
+        this.notice = 'Enrollment created.';
+        return true;
+      });
     },
   },
 });

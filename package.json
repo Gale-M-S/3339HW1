@@ -1,0 +1,14 @@
+{
+  "name": "cis3339-homework1",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "install:all": "npm install && cd cis3339-homework1/frontend && npm install && cd ../backend && npm install",
+    "build": "cd cis3339-homework1/frontend && npm run build",
+    "start": "cd cis3339-homework1/backend && npm start",
+    "dev": "concurrently \"cd cis3339-homework1/backend && npm run dev\" \"cd cis3339-homework1/frontend && npm run dev\""
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}

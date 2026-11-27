@@ -155,6 +155,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .button:hover:not(:disabled) { filter: brightness(.96); }
 .button:disabled { cursor: not-allowed; opacity: .55; }
 .button.primary { justify-content: space-between; margin-top: 3px; background: #398152; color: #fff; }
+.button.dark { background: #2d3c33; color: #fff; }
+.button.subtle { background: #eef1ed; color: #68756c; }
 .directory-card { padding-bottom: 5px; }
 .search-form { display: flex; gap: 8px; margin-bottom: 16px; }
 .search-form input, .search-form select { flex: 1; min-width: 90px; }
@@ -171,6 +173,7 @@ td strong { color: #354139; font-weight: 600; }
 .feedback { margin: 0 0 16px; padding: 10px 13px; border-radius: 7px; font-size: 12px; }
 .feedback.error { background: #fff0ef; color: #9c3933; }
 .feedback.success { background: #eaf6ed; color: #327749; }
+.feedback.loading { background: #eef4f8; color: #3e657b; }
 .hint { margin: 0; color: #87938b; font-size: 11px; line-height: 1.5; }
 .footer { padding: 17px 40px; border-top: 1px solid #e8ebe5; color: #a4aca5; font-size: 9px; font-weight: 700; letter-spacing: 1px; }
 .footer span { padding: 0 4px; color: #59a070; }

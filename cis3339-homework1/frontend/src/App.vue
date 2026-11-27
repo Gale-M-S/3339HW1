@@ -32,7 +32,7 @@ const pageName = computed(() => ({
         <div class="avatar" aria-label="Campus administrator">CA</div>
       </header>
       <div class="content"><RouterView /></div>
-      <footer class="footer">CAMPUSDESK <span>·</span> FRONTEND PREVIEW</footer>
+      <footer class="footer">CAMPUSDESK <span>·</span> STUDENT MANAGEMENT</footer>
     </main>
   </div>
 </template>

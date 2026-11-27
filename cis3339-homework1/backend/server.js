@@ -12,6 +12,12 @@ const PORT = process.env.PORT || 3000;
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/cis3339_homework1';
 
 app.use(express.json());
+app.use((error, _req, res, next) => {
+  if (error instanceof SyntaxError && error.status === 400 && 'body' in error) {
+    return res.status(400).json({ error: 'Request body must be valid JSON.' });
+  }
+  return next(error);
+});
 
 function sendError(error, res) {
   if (error.code === 11000) return res.status(409).json({ error: 'A record with that ID already exists.' });
@@ -112,15 +118,23 @@ app.post('/api/enrollments', async (req, res) => {
   } catch (error) { sendError(error, res); }
 });
 
+app.use('/api', (req, res) => {
+  res.status(404).json({ error: `Route ${req.method} /api${req.path} was not found.` });
+});
+
+const frontendDist = path.join(__dirname, '..', 'frontend', 'dist');
+app.use(express.static(frontendDist));
+app.get('/{*splat}', (req, res, next) => {
+  res.sendFile(path.join(frontendDist, 'index.html'), (error) => error && next(error));
+});
+
 app.use((req, res) => {
   res.status(404).json({ error: `Route ${req.method} ${req.path} was not found.` });
 });
 
-app.use((error, _req, res, next) => {
-  if (error instanceof SyntaxError && error.status === 400 && 'body' in error) {
-    return res.status(400).json({ error: 'Request body must be valid JSON.' });
-  }
-  return next(error);
+app.use((error, _req, res, _next) => {
+  console.error(error);
+  res.status(error.status || 500).json({ error: 'The request could not be completed.' });
 });
 
 async function start() {
